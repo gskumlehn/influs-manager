@@ -1,34 +1,19 @@
 import os
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from google.cloud import bigquery
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@db:5432/influencer_db"
-)
+PROJECT_ID = os.getenv("GCP_PROJECT_ID", "your-project-id")
+DATASET_ID = os.getenv("BIGQUERY_DATASET_ID", "influencer_db")
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20
-)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+client = bigquery.Client(project=PROJECT_ID)
 
 @contextmanager
-def get_session():
-    session = SessionLocal()
+def get_client():
     try:
-        yield session
-        session.commit()
+        yield client
     except Exception:
-        session.rollback()
         raise
-    finally:
-        session.close()
+
+def get_table_id(table_name: str) -> str:
+    return f"{PROJECT_ID}.{DATASET_ID}.{table_name}"

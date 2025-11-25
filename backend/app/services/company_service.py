@@ -1,4 +1,3 @@
-from app.models.company import Company
 from app.repositories.company_repository import CompanyRepository
 
 class CompanyService:
@@ -9,15 +8,15 @@ class CompanyService:
         existing = CompanyRepository.find_by_slug(slug)
         if existing:
             return None
-        company = Company()
-        company.name = name
-        company.slug = slug
-        company.logo_url = logo_url
-        company.primary_color = primary_color
-        company.secondary_color = secondary_color
-        company.instagram_handle = instagram_handle
-        created = CompanyRepository.create(company)
-        return created.to_dict()
+        data = {
+            "name": name,
+            "slug": slug,
+            "logo_url": logo_url,
+            "primary_color": primary_color,
+            "secondary_color": secondary_color,
+            "instagram_handle": instagram_handle
+        }
+        return CompanyRepository.create(data)
     
     @staticmethod
     def get_all_companies():

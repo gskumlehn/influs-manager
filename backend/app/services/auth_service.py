@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 import bcrypt
 import jwt
 
-from app.enums.user_role import UserRole
-from app.models.user import User
 from app.repositories.user_repository import UserRepository
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -46,23 +44,23 @@ class AuthService:
         user = UserRepository.find_by_email(email)
         if not user:
             return None
-        if not AuthService.verify_password(password, user.password_hash):
+        if not AuthService.verify_password(password, user["password_hash"]):
             return None
-        token = AuthService.create_access_token({"user_id": user.id, "email": user.email})
+        token = AuthService.create_access_token({"user_id": user["id"], "email": user["email"]})
         return {
             "token": token,
-            "user": user.to_dict()
+            "user": user
         }
     
     @staticmethod
-    def register(email: str, password: str, role: UserRole, company_id: int = None):
+    def register(email: str, password: str, role: str, company_id: int = None):
         existing_user = UserRepository.find_by_email(email)
         if existing_user:
             return None
-        user = User()
-        user.email = email
-        user.password_hash = AuthService.hash_password(password)
-        user.role = role
-        user.company_id = company_id
-        created_user = UserRepository.create(user)
-        return created_user.to_dict()
+        data = {
+            "email": email,
+            "password_hash": AuthService.hash_password(password),
+            "role": role,
+            "company_id": company_id
+        }
+        return UserRepository.create(data)

@@ -1,7 +1,5 @@
 from flask import Blueprint, jsonify, request
 
-from app.enums.influencer_status import InfluencerStatus
-from app.enums.platform import Platform
 from app.services.influencer_service import InfluencerService
 
 influencer_bp = Blueprint("influencer", __name__)
@@ -15,12 +13,10 @@ def list_influencers(campaign_id):
 def create_influencer(campaign_id):
     data = request.get_json()
     username = data.get("username")
-    platform_str = data.get("platform")
-    if not username or not platform_str:
+    platform = data.get("platform")
+    if not username or not platform:
         return jsonify({"error": "username e platform são obrigatórios"}), 400
-    try:
-        platform = Platform(platform_str)
-    except ValueError:
+    if platform not in ["instagram", "tiktok"]:
         return jsonify({"error": "Platform inválido"}), 400
     try:
         influencer = InfluencerService.create_influencer_from_hypeauditor(
@@ -61,12 +57,10 @@ def update_budget(influencer_id):
 @influencer_bp.route("/influencers/<int:influencer_id>/status", methods=["PUT"])
 def update_status(influencer_id):
     data = request.get_json()
-    status_str = data.get("status")
-    if not status_str:
+    status = data.get("status")
+    if not status:
         return jsonify({"error": "status é obrigatório"}), 400
-    try:
-        status = InfluencerStatus(status_str)
-    except ValueError:
+    if status not in ["suggested", "approved", "rejected", "contracted"]:
         return jsonify({"error": "Status inválido"}), 400
     influencer = InfluencerService.update_status(influencer_id, status)
     if not influencer:

@@ -1,10 +1,6 @@
 import json
-from decimal import Decimal
 
-from app.enums.influencer_status import InfluencerStatus
-from app.enums.platform import Platform
 from app.infra.hypeauditor_client import HypeAuditorClient
-from app.models.influencer import Influencer
 from app.repositories.influencer_repository import InfluencerRepository
 
 class InfluencerService:
@@ -19,26 +15,26 @@ class InfluencerService:
         return None
     
     @staticmethod
-    def create_influencer_from_hypeauditor(campaign_id: int, username: str, platform: Platform):
+    def create_influencer_from_hypeauditor(campaign_id: int, username: str, platform: str):
         client = HypeAuditorClient()
         try:
-            if platform == Platform.INSTAGRAM:
+            if platform == "instagram":
                 report = client.get_instagram_report(username)
             else:
                 report = client.get_tiktok_report(username)
             metrics = client.extract_metrics(report)
-            influencer = Influencer()
-            influencer.campaign_id = campaign_id
-            influencer.username = username
-            influencer.platform = platform
-            influencer.full_name = metrics.get("full_name", "")
-            influencer.followers_count = metrics.get("followers_count", 0)
-            influencer.aqs_score = Decimal(str(metrics.get("aqs_score", 0)))
-            influencer.quality_audience = metrics.get("quality_audience", 0)
-            influencer.status = InfluencerStatus.SUGGESTED
-            influencer.hypeauditor_data = json.dumps(report)
-            created = InfluencerRepository.create(influencer)
-            return created.to_dict()
+            data = {
+                "campaign_id": campaign_id,
+                "username": username,
+                "platform": platform,
+                "full_name": metrics.get("full_name", ""),
+                "followers_count": metrics.get("followers_count", 0),
+                "aqs_score": metrics.get("aqs_score", 0),
+                "quality_audience": metrics.get("quality_audience", 0),
+                "status": "suggested",
+                "hypeauditor_data": json.dumps(report)
+            }
+            return InfluencerRepository.create(data)
         except Exception as e:
             raise Exception(f"Erro ao buscar dados do HypeAuditor: {str(e)}")
     
@@ -67,5 +63,5 @@ class InfluencerService:
         return InfluencerRepository.update(influencer_id, data)
     
     @staticmethod
-    def update_status(influencer_id: int, status: InfluencerStatus):
-        return InfluencerRepository.update(influencer_id, {"_status": status.value})
+    def update_status(influencer_id: int, status: str):
+        return InfluencerRepository.update(influencer_id, {"status": status})

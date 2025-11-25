@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from app.enums.user_role import UserRole
+from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.company_service import CompanyService
 
@@ -21,7 +21,7 @@ def login():
         "token": result["token"],
         "user": user
     }
-    if user["company_id"]:
+    if user.get("company_id"):
         company = CompanyService.get_company_by_id(user["company_id"])
         response_data["company"] = company
     return jsonify(response_data), 200
@@ -35,11 +35,9 @@ def register():
     company_id = data.get("company_id")
     if not email or not password:
         return jsonify({"error": "Email e senha são obrigatórios"}), 400
-    try:
-        user_role = UserRole(role)
-    except ValueError:
+    if role not in ["admin", "client"]:
         return jsonify({"error": "Role inválido"}), 400
-    user = AuthService.register(email, password, user_role, company_id)
+    user = AuthService.register(email, password, role, company_id)
     if not user:
         return jsonify({"error": "Email já cadastrado"}), 409
     return jsonify(user), 201
@@ -53,12 +51,11 @@ def get_current_user():
     payload = AuthService.decode_token(token)
     if not payload:
         return jsonify({"error": "Token inválido ou expirado"}), 401
-    from app.repositories.user_repository import UserRepository
     user = UserRepository.find_by_id(payload["user_id"])
     if not user:
         return jsonify({"error": "Usuário não encontrado"}), 404
-    response_data = {"user": user.to_dict()}
-    if user.company_id:
-        company = CompanyService.get_company_by_id(user.company_id)
+    response_data = {"user": user}
+    if user.get("company_id"):
+        company = CompanyService.get_company_by_id(user["company_id"])
         response_data["company"] = company
     return jsonify(response_data), 200

@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 
-from app.enums.campaign_status import CampaignStatus
 from app.services.campaign_service import CampaignService
 
 campaign_bp = Blueprint("campaign", __name__)
@@ -28,10 +27,8 @@ def create_campaign():
     name = data.get("name")
     if not company_id or not name:
         return jsonify({"error": "company_id e name são obrigatórios"}), 400
-    status_str = data.get("status", "draft")
-    try:
-        status = CampaignStatus(status_str)
-    except ValueError:
+    status = data.get("status", "draft")
+    if status not in ["draft", "active", "completed", "archived"]:
         return jsonify({"error": "Status inválido"}), 400
     campaign = CampaignService.create_campaign(
         company_id=company_id,
