@@ -1,0 +1,4 @@
+from app.repositories.campaign_repository import CampaignRepository
+from app.repositories.company_repository import CompanyRepository
+from app.repositories.influencer_repository import InfluencerRepository
+from app.repositories.user_repository import UserRepository
